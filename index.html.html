@@ -1,0 +1,1670 @@
+<!DOCTYPE html>
+<!-- saved from url=(0057)file:///C:/Users/HP/Downloads/finance-app-full%20(1).html -->
+<html lang="vi"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sổ Thu Chi</title>
+<script src="./Sổ Thu Chi_files/dexie.js.download"></script>
+<script src="./Sổ Thu Chi_files/chart.umd.min.js.download"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f7f7f3;--surface:#fff;--border:#e8e8e3;--border2:#f0f0ec;
+  --text:#1a1a18;--text2:#555;--text3:#999;
+  --green:#1D9E75;--green-bg:#e1f5ee;--green-text:#085041;
+  --red:#E8593C;--red-bg:#faecea;--red-text:#7a2010;
+  --blue:#378ADD;--blue-bg:#e6f1fb;--blue-text:#0c3f6e;
+  --amber:#BA7517;--amber-bg:#faf0dc;--amber-text:#5a3000;
+  --purple:#7F77DD;--purple-bg:#efeefc;--purple-text:#3a3580;
+  --radius:12px;--radius-sm:8px;--shadow:0 1px 4px rgba(0,0,0,.07);
+}
+body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);font-size:14px;min-height:100vh}
+/* LAYOUT */
+.shell{display:flex;min-height:100vh}
+.sidebar{width:220px;background:var(--surface);border-right:1px solid var(--border);padding:20px 12px;flex-shrink:0;display:flex;flex-direction:column;gap:4px;position:sticky;top:0;height:100vh}
+.logo{font-size:17px;font-weight:700;padding:8px 10px 18px;color:var(--text)}
+.logo span{color:var(--green)}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--radius-sm);cursor:pointer;font-size:13px;font-weight:500;color:var(--text2);border:none;background:none;width:100%;text-align:left;transition:all .15s}
+.nav-item:hover{background:var(--bg);color:var(--text)}
+.nav-item.active{background:var(--green-bg);color:var(--green-text)}
+.nav-item svg{width:16px;height:16px;flex-shrink:0}
+.main{flex:1;padding:28px;overflow-y:auto;max-width:900px}
+.page{display:none}.page.active{display:block}
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:16px;overflow:hidden}
+.card-header{padding:14px 18px;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between}
+.card-title{font-weight:600;font-size:14px}
+.card-body{padding:18px}
+/* STATS */
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+.stat-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+.stat-value{font-size:22px;font-weight:700;line-height:1}
+.stat-value.green{color:var(--green)}.stat-value.red{color:var(--red)}.stat-value.blue{color:var(--blue)}
+.stat-sub{font-size:11px;color:var(--text3);margin-top:4px}
+/* FORM */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.form-grid.col1{grid-template-columns:1fr}
+.field label{display:block;font-size:12px;font-weight:500;color:var(--text2);margin-bottom:4px}
+input,select,textarea{width:100%;padding:8px 11px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:inherit;background:#fafaf8;color:var(--text);outline:none;transition:border-color .15s}
+input:focus,select:focus,textarea:focus{border-color:var(--blue);background:#fff}
+textarea{resize:vertical;min-height:56px}
+/* BUTTONS */
+.btn{padding:8px 18px;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:opacity .15s;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{opacity:.85}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-success{background:var(--green);color:#fff}
+.btn-danger{background:var(--red);color:#fff}
+.btn-ghost{background:var(--bg);color:var(--text);border:1px solid var(--border)}
+.btn-sm{padding:4px 10px;font-size:12px}
+/* TYPE TOGGLE */
+.type-toggle{display:flex;gap:8px;margin-bottom:14px}
+.type-btn{flex:1;padding:9px;border:2px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);cursor:pointer;font-size:13px;font-weight:600;font-family:inherit;transition:all .15s;color:var(--text2)}
+.type-btn.expense{border-color:var(--red);background:var(--red-bg);color:var(--red-text)}
+.type-btn.income{border-color:var(--green);background:var(--green-bg);color:var(--green-text)}
+/* TABLE */
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font-weight:500;color:var(--text3);padding:8px 10px;border-bottom:1px solid var(--border);font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+td{padding:10px 10px;border-bottom:1px solid var(--border2);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafaf8}
+/* TAGS */
+.tag{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
+.tag-income{background:var(--green-bg);color:var(--green-text)}
+.tag-expense{background:var(--red-bg);color:var(--red-text)}
+.tag-ai{background:var(--blue-bg);color:var(--blue-text)}
+.tag-user{background:var(--green-bg);color:var(--green-text)}
+.tag-high{background:var(--green-bg);color:var(--green-text)}
+.tag-low{background:var(--amber-bg);color:var(--amber-text)}
+.tag-warning{background:var(--amber-bg);color:var(--amber-text)}
+.tag-danger{background:var(--red-bg);color:var(--red-text)}
+/* DOT */
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:5px;flex-shrink:0}
+/* ALERTS */
+.alert{padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.alert-warning{background:var(--amber-bg);color:var(--amber-text);border:1px solid #e6b94a}
+.alert-danger{background:var(--red-bg);color:var(--red-text);border:1px solid var(--red)}
+.rec{padding:9px 13px;background:var(--green-bg);border-radius:var(--radius-sm);font-size:13px;color:var(--green-text);margin-bottom:7px;border-left:3px solid var(--green)}
+/* CLASSIFY PREVIEW */
+.classify-box{background:var(--bg);border-radius:var(--radius-sm);padding:9px 12px;font-size:13px;margin-top:8px;border:1px solid var(--border);display:none;align-items:center;gap:8px}
+/* SURPLUS BAR */
+.surplus-bar{display:flex;border-radius:6px;overflow:hidden;height:28px;margin:12px 0}
+.surplus-seg{display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#fff;min-width:24px}
+/* SLIDER RULE */
+.rule-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;background:var(--bg);padding:10px 12px;border-radius:var(--radius-sm);border:1px solid var(--border2)}
+.rule-row input[type=range]{flex:1;accent-color:var(--blue)}
+.rule-pct{width:42px;text-align:right;font-weight:700;font-size:14px}
+/* CONSOLE */
+.console{background:#161614;color:#c8f0d8;font-family:ui-monospace,monospace;font-size:12px;padding:14px;border-radius:var(--radius-sm);max-height:160px;overflow-y:auto;line-height:1.7}
+.console .err{color:#f09595}.console .ok{color:#86e096}.console .info{color:#85b7eb}
+/* CHART */
+.chart-wrap{position:relative;height:220px}
+/* EMPTY */
+.empty{text-align:center;padding:36px;color:var(--text3);font-size:13px}
+/* MONTH NAV */
+.month-nav{display:flex;align-items:center;gap:10px}
+.month-nav button{background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:16px;color:var(--text2)}
+.month-nav span{font-weight:600;font-size:14px;min-width:100px;text-align:center}
+/* CAT BADGE */
+.cat-chip{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500;color:#fff}
+/* SCROLLBAR */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#ddd;border-radius:4px}
+/* MOBILE */
+@media(max-width:640px){
+  .sidebar{display:none}
+  .main{padding:16px}
+  .stats-row{grid-template-columns:1fr 1fr}
+  .form-grid{grid-template-columns:1fr}
+}
+/* MODAL */
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:100;display:none;align-items:center;justify-content:center}
+.modal-backdrop.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--radius);padding:24px;width:360px;max-width:90vw;box-shadow:0 8px 32px rgba(0,0,0,.18)}
+.modal h3{font-size:15px;margin-bottom:16px}
+</style>
+</head>
+<body>
+<div class="shell">
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="logo">Sổ <span>Thu Chi</span></div>
+    <button class="nav-item" onclick="nav(&#39;dashboard&#39;)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg>
+      Tổng quan
+    </button>
+    <button class="nav-item" onclick="nav(&#39;add&#39;)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+      Thêm giao dịch
+    </button>
+    <button class="nav-item" onclick="nav(&#39;ledger&#39;)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+      Sổ giao dịch
+    </button>
+    <button class="nav-item" onclick="nav(&#39;analytics&#39;)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+      Phân tích
+    </button>
+    <button class="nav-item active" onclick="nav(&#39;surplus&#39;)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+      Thặng dư
+    </button>
+    <button class="nav-item" onclick="nav(&#39;settings&#39;)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"></path></svg>
+      Cài đặt
+    </button>
+    <div style="flex:1"></div>
+    <div style="font-size:11px;color:var(--text3);padding:8px 10px">Offline · Dữ liệu lưu trên máy</div>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- ── DASHBOARD ── -->
+    <div id="page-dashboard" class="page">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <div>
+          <h2 style="font-size:18px;font-weight:700">Tổng quan</h2>
+          <div style="font-size:13px;color:var(--text3)" id="dash-month-label">Tháng 6 2026</div>
+        </div>
+        <div class="month-nav">
+          <button onclick="changeMonth(-1)">‹</button>
+          <span id="month-nav-label">Tháng 6 2026</span>
+          <button onclick="changeMonth(1)">›</button>
+        </div>
+      </div>
+      <div class="stats-row" id="dash-stats">
+    <div class="stat-card"><div class="stat-label">Thu nhập</div><div class="stat-value green">770.000đ</div></div>
+    <div class="stat-card"><div class="stat-label">Chi tiêu</div><div class="stat-value red">685.300đ</div></div>
+    <div class="stat-card"><div class="stat-label">Thặng dư</div><div class="stat-value blue">84.700đ</div></div>
+  </div>
+      <div id="dash-alerts"><div class="alert alert-warning">⚠ Chi tiêu đang chiếm 89% thu nhập</div></div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Thu chi 6 tháng gần nhất</span></div>
+        <div class="card-body"><div class="chart-wrap"><canvas id="chart-trend" width="1210" height="330" style="display: block; box-sizing: border-box; height: 220px; width: 806px;"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Chi tiêu theo danh mục tháng này</span></div>
+        <div class="card-body" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:center">
+          <div class="chart-wrap" style="height:180px"><canvas id="chart-donut" width="592" height="270" style="display: block; box-sizing: border-box; height: 180px; width: 395px;"></canvas></div>
+          <div id="cat-legend"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;font-size:12px">
+        <div><span class="dot" style="background:#D4537E"></span>Mua sắm sinh hoạt</div>
+        <div style="font-weight:600">60%</div>
+      </div><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;font-size:12px">
+        <div><span class="dot" style="background:#888780"></span>Tiêu vì vui</div>
+        <div style="font-weight:600">21%</div>
+      </div><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;font-size:12px">
+        <div><span class="dot" style="background:#E8593C"></span>Ăn uống</div>
+        <div style="font-weight:600">12%</div>
+      </div><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;font-size:12px">
+        <div><span class="dot" style="background:#378ADD"></span>Di chuyển</div>
+        <div style="font-weight:600">7%</div>
+      </div></div>
+        </div>
+      </div>
+      <div id="dash-recs"><div class="card"><div class="card-header"><span class="card-title">Khuyến nghị</span></div><div class="card-body"><div class="rec">💡 Thặng dư 84.700đ — hãy phân bổ ngay</div><div class="rec">💡 "Mua sắm sinh hoạt" chiếm 60% chi tiêu</div></div></div></div>
+    </div>
+
+    <!-- ── ADD TRANSACTION ── -->
+    <div id="page-add" class="page">
+      <h2 style="font-size:18px;font-weight:700;margin-bottom:20px">Thêm giao dịch</h2>
+      <div class="card">
+        <div class="card-body">
+          <div class="type-toggle">
+            <button id="btn-expense" class="type-btn expense" onclick="setType(&#39;expense&#39;)">Chi tiêu</button>
+            <button id="btn-income" class="type-btn" onclick="setType(&#39;income&#39;)">Thu nhập</button>
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label>Số tiền (VND)</label>
+              <input type="number" id="inp-amount" placeholder="150,000" min="1">
+            </div>
+            <div class="field">
+              <label>Ngày</label>
+              <input type="date" id="inp-date">
+            </div>
+          </div>
+          <div class="field" style="margin-bottom:10px">
+            <label>Ghi chú</label>
+            <input type="text" id="inp-note" placeholder="Ăn sáng, Grab đi làm, Tiền điện tháng 6..." oninput="onNoteInput(this.value)">
+            <div class="classify-box" id="classify-preview"></div>
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label>Danh mục <span style="color:var(--text3);font-weight:400">(để trống = tự động)</span></label>
+              <select id="inp-cat"><option value="">-- Tự động phân loại --</option><option value="8098c588-eed8-4e90-abe5-c98f5776dfc2">Ăn uống</option><option value="4aba6aa6-447b-4391-9979-b3e4a70f6671">Di chuyển</option><option value="c33de191-22a9-4212-a28c-2135e6771164">Mua sắm sinh hoạt</option><option value="5134448b-0172-42e5-bb4a-787500142c74">Hóa đơn</option><option value="0cc67066-3c57-473d-85d2-9ca7d4c7e269">Sức khoẻ</option><option value="0828d7dd-c253-41e9-9b42-6123ccbd84e0">Giải trí</option><option value="1d53fe3f-c4fe-47af-8442-fe753523d9f3">Giáo dục</option><option value="758e2f48-ad68-46aa-ac85-58777419b35e">Tiêu vì vui</option></select>
+            </div>
+            <div class="field" style="display:flex;align-items:flex-end">
+              <button class="btn btn-primary" style="width:100%" onclick="addTx()">Lưu giao dịch</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── LEDGER ── -->
+    <div id="page-ledger" class="page">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <h2 style="font-size:18px;font-weight:700">Sổ giao dịch</h2>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div class="month-nav">
+            <button onclick="changeMonth(-1)">‹</button>
+            <span id="ledger-month-label">Tháng 6 2026</span>
+            <button onclick="changeMonth(1)">›</button>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="exportCSV()">↓ CSV</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-body" style="padding:0">
+          <table>
+            <thead><tr>
+              <th>Ngày</th><th>Ghi chú</th><th>Danh mục</th><th>Nhãn</th>
+              <th style="text-align:right">Số tiền</th><th></th>
+            </tr></thead>
+            <tbody id="ledger-body"></tbody>
+          </table>
+          <div id="ledger-empty" class="empty" style="display:none">Chưa có giao dịch trong tháng này</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ANALYTICS ── -->
+    <div id="page-analytics" class="page">
+      <h2 style="font-size:18px;font-weight:700;margin-bottom:20px">Phân tích</h2>
+      <div id="ana-alerts" style="margin-bottom:12px"></div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Top danh mục chi tiêu</span></div>
+        <div class="card-body" style="padding:0">
+          <table>
+            <thead><tr><th>Danh mục</th><th>Thiết yếu <span style="font-weight:400;color:var(--text3)">(nhấp để đổi)</span></th><th>Tổng chi</th><th style="text-align:right">%</th></tr></thead>
+            <tbody id="ana-cat-table"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Xu hướng 6 tháng</span></div>
+        <div class="card-body"><div class="chart-wrap"><canvas id="chart-trend2"></canvas></div></div>
+      </div>
+      <div id="ana-recs"></div>
+    </div>
+
+    <!-- ── SURPLUS ── -->
+    <div id="page-surplus" class="page active">
+      <h2 style="font-size:18px;font-weight:700;margin-bottom:20px">Phân bổ thặng dư</h2>
+      <div class="card">
+        <div class="card-body">
+          <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:4px">
+            <div style="font-size: 28px; font-weight: 700; color: var(--green);" id="surplus-val">84.700đ</div>
+            <div style="font-size:13px;color:var(--text3)">tháng này</div>
+          </div>
+          <div style="font-size:13px;color:var(--text3);margin-bottom:14px" id="surplus-sub">Thu 770.000đ − Chi 685.300đ</div>
+          <div class="surplus-bar" id="surplus-bar"><div class="surplus-seg" style="width:20%;background:#ba7517" title="Dự phòng: 20%">20%</div><div class="surplus-seg" style="width:20%;background:#7f77dd" title="Giải trí: 20%">20%</div><div class="surplus-seg" style="width:30%;background:#378add" title="Đầu tư: 30%">30%</div><div class="surplus-seg" style="width:30%;background:#1d9e75" title="Tiết kiệm: 30%">30%</div></div>
+          <div id="surplus-alloc-table"><table style="margin-top:12px">
+    <thead><tr>
+      <th>Mục phân bổ</th>
+      <th>Tỉ lệ</th>
+      <th style="text-align:right">Số tiền</th>
+    </tr></thead>
+    <tbody id="alloc-live-tbody"><tr>
+    <td><span class="dot" style="background:#ba7517"></span><strong>Dự phòng</strong></td>
+    <td style="color:var(--text3)">20%</td>
+    <td style="text-align:right;font-weight:700;font-size:15px">16.940đ</td>
+  </tr><tr>
+    <td><span class="dot" style="background:#7f77dd"></span><strong>Giải trí</strong></td>
+    <td style="color:var(--text3)">20%</td>
+    <td style="text-align:right;font-weight:700;font-size:15px">16.940đ</td>
+  </tr><tr>
+    <td><span class="dot" style="background:#378add"></span><strong>Đầu tư</strong></td>
+    <td style="color:var(--text3)">30%</td>
+    <td style="text-align:right;font-weight:700;font-size:15px">25.410đ</td>
+  </tr><tr>
+    <td><span class="dot" style="background:#1d9e75"></span><strong>Tiết kiệm</strong></td>
+    <td style="color:var(--text3)">30%</td>
+    <td style="text-align:right;font-weight:700;font-size:15px">25.410đ</td>
+  </tr></tbody>
+  </table></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Chỉnh tỉ lệ phân bổ</span>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost btn-sm" onclick="suggestRules()">Gợi ý</button>
+            <button class="btn btn-primary btn-sm" onclick="saveRules()">Lưu</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div id="rule-editor">
+    <div class="rule-row" data-idx="0">
+      <label style="cursor:pointer;position:relative;flex-shrink:0" title="Đổi màu">
+        <span id="rl-dot-0" class="dot" style="background:#BA7517;width:18px;height:18px;cursor:pointer"></span>
+        <input type="color" value="#BA7517" style="opacity:0;width:0;height:0;position:absolute" class="rl-color" data-idx="0" onchange="onColorChange(0,this.value)">
+      </label>
+      <input type="text" value="Dự phòng" style="width:110px" class="rl-label" data-id="05538768-3256-4a9f-bf65-462dc349707f" data-color="#BA7517">
+      <input type="range" min="0" max="100" value="20" class="rl-range" oninput="onRangeInput(0,this.value)">
+      <span class="rule-pct" id="rl-pct-0">20%</span>
+      <button class="btn btn-danger btn-sm" onclick="removeRuleRow(0)">✕</button>
+    </div>
+    <div class="rule-row" data-idx="1">
+      <label style="cursor:pointer;position:relative;flex-shrink:0" title="Đổi màu">
+        <span id="rl-dot-1" class="dot" style="background:#7F77DD;width:18px;height:18px;cursor:pointer"></span>
+        <input type="color" value="#7F77DD" style="opacity:0;width:0;height:0;position:absolute" class="rl-color" data-idx="1" onchange="onColorChange(1,this.value)">
+      </label>
+      <input type="text" value="Giải trí" style="width:110px" class="rl-label" data-id="909893b4-153e-4052-9edc-7c7305e275a4" data-color="#7F77DD">
+      <input type="range" min="0" max="100" value="20" class="rl-range" oninput="onRangeInput(1,this.value)">
+      <span class="rule-pct" id="rl-pct-1">20%</span>
+      <button class="btn btn-danger btn-sm" onclick="removeRuleRow(1)">✕</button>
+    </div>
+    <div class="rule-row" data-idx="2">
+      <label style="cursor:pointer;position:relative;flex-shrink:0" title="Đổi màu">
+        <span id="rl-dot-2" class="dot" style="background:#378ADD;width:18px;height:18px;cursor:pointer"></span>
+        <input type="color" value="#378ADD" style="opacity:0;width:0;height:0;position:absolute" class="rl-color" data-idx="2" onchange="onColorChange(2,this.value)">
+      </label>
+      <input type="text" value="Đầu tư" style="width:110px" class="rl-label" data-id="b91894cb-e020-414b-8be1-561f98832a2a" data-color="#378ADD">
+      <input type="range" min="0" max="100" value="30" class="rl-range" oninput="onRangeInput(2,this.value)">
+      <span class="rule-pct" id="rl-pct-2">30%</span>
+      <button class="btn btn-danger btn-sm" onclick="removeRuleRow(2)">✕</button>
+    </div>
+    <div class="rule-row" data-idx="3">
+      <label style="cursor:pointer;position:relative;flex-shrink:0" title="Đổi màu">
+        <span id="rl-dot-3" class="dot" style="background:#1D9E75;width:18px;height:18px;cursor:pointer"></span>
+        <input type="color" value="#1D9E75" style="opacity:0;width:0;height:0;position:absolute" class="rl-color" data-idx="3" onchange="onColorChange(3,this.value)">
+      </label>
+      <input type="text" value="Tiết kiệm" style="width:110px" class="rl-label" data-id="f919e696-47b0-41c3-b548-61694e7bbbfe" data-color="#1D9E75">
+      <input type="range" min="0" max="100" value="30" class="rl-range" oninput="onRangeInput(3,this.value)">
+      <span class="rule-pct" id="rl-pct-3">30%</span>
+      <button class="btn btn-danger btn-sm" onclick="removeRuleRow(3)">✕</button>
+    </div></div>
+          <div id="rule-error" style="color:var(--red);font-size:12px;display:none;margin-top:6px"></div>
+          <button class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="addRuleRow()">+ Thêm mục</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">📊 Lịch sử tích luỹ theo tháng</span>
+          <span style="font-size:12px;color:var(--text3)">Tự động lưu khi bấm Lưu phân bổ</span>
+        </div>
+        <div class="card-body" style="padding:0">
+          <table>
+            <thead><tr>
+              <th>Tháng</th><th>Thu nhập</th><th>Chi tiêu</th><th>Thặng dư</th><th>Phân bổ</th><th></th>
+            </tr></thead>
+            <tbody id="alloc-history-tbody"></tbody>
+          </table>
+          <div id="alloc-history-empty" class="empty" style="display: block;">Chưa có lịch sử — bấm "Lưu" để ghi nhận tháng đầu tiên</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SETTINGS ── -->
+    <div id="page-settings" class="page">
+      <h2 style="font-size:18px;font-weight:700;margin-bottom:20px">Cài đặt</h2>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Danh mục</span>
+          <button class="btn btn-success btn-sm" onclick="openAddCat()">+ Thêm danh mục</button>
+        </div>
+        <div class="card-body" style="padding:0">
+          <table>
+            <thead><tr><th>Màu</th><th>Tên danh mục</th><th>Loại</th><th>Thiết yếu</th><th>Keywords (nhấp để sửa)</th><th></th></tr></thead>
+            <tbody id="cat-table"><tr>
+    <td>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+        <span id="cat-color-dot-0" style="display:inline-block;width:22px;height:22px;border-radius:5px;background:#E8593C;border:1px solid #ccc;flex-shrink:0"></span>
+        <input type="color" id="cat-color-0" value="#E8593C" style="opacity:0;width:0;height:0;position:absolute" onchange="updateCatColor(0,this.value)">
+      </label>
+    </td>
+    <td><input type="text" id="cat-name-0" value="Ăn uống" style="font-weight:500;width:120px;padding:4px 8px;font-size:13px" onchange="updateCatName(0,this.value)"></td>
+    <td><span class="tag tag-expense">Chi tiêu</span></td>
+    <td><span class="tag tag-user" style="cursor:pointer;user-select:none" title="Nhấp để đổi" onclick="toggleEssential(&#39;8098c588-eed8-4e90-abe5-c98f5776dfc2&#39;,false,this)">✓ Thiết yếu</span></td>
+    <td style="color:var(--text3);font-size:12px;max-width:160px">
+      <span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="ăn, uống, cơm, phở, bún, bánh, cafe, cà phê, trà, nhà hàng, quán, ăn sáng, ăn trưa, ăn tối, grab food, baemin, shopee food, đồ ăn">ăn, uống, cơm, phở, bún, bánh, cafe, cà phê, trà, nhà hàng, quán, ăn sáng, ăn trưa, ăn tối, grab food, baemin, shopee food, đồ ăn</span>
+    </td>
+    <td style="white-space:nowrap">
+      <button class="btn btn-ghost btn-sm" style="margin-right:3px" onclick="openEditCat(&#39;8098c588-eed8-4e90-abe5-c98f5776dfc2&#39;)">✏</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteCat(&#39;8098c588-eed8-4e90-abe5-c98f5776dfc2&#39;)">✕</button>
+    </td>
+  </tr><tr>
+    <td>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+        <span id="cat-color-dot-1" style="display:inline-block;width:22px;height:22px;border-radius:5px;background:#378ADD;border:1px solid #ccc;flex-shrink:0"></span>
+        <input type="color" id="cat-color-1" value="#378ADD" style="opacity:0;width:0;height:0;position:absolute" onchange="updateCatColor(1,this.value)">
+      </label>
+    </td>
+    <td><input type="text" id="cat-name-1" value="Di chuyển" style="font-weight:500;width:120px;padding:4px 8px;font-size:13px" onchange="updateCatName(1,this.value)"></td>
+    <td><span class="tag tag-expense">Chi tiêu</span></td>
+    <td><span class="tag tag-user" style="cursor:pointer;user-select:none" title="Nhấp để đổi" onclick="toggleEssential(&#39;4aba6aa6-447b-4391-9979-b3e4a70f6671&#39;,false,this)">✓ Thiết yếu</span></td>
+    <td style="color:var(--text3);font-size:12px;max-width:160px">
+      <span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="grab, xe ôm, xe om, taxi, uber, be , gojek, xăng, xang, đổ xăng, xe buýt, xe bus, vé tàu, vé xe, máy bay, parking, gửi xe, giữ xe">grab, xe ôm, xe om, taxi, uber, be , gojek, xăng, xang, đổ xăng, xe buýt, xe bus, vé tàu, vé xe, máy bay, parking, gửi xe, giữ xe</span>
+    </td>
+    <td style="white-space:nowrap">
+      <button class="btn btn-ghost btn-sm" style="margin-right:3px" onclick="openEditCat(&#39;4aba6aa6-447b-4391-9979-b3e4a70f6671&#39;)">✏</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteCat(&#39;4aba6aa6-447b-4391-9979-b3e4a70f6671&#39;)">✕</button>
+    </td>
+  </tr><tr>
+    <td>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+        <span id="cat-color-dot-2" style="display:inline-block;width:22px;height:22px;border-radius:5px;background:#D4537E;border:1px solid #ccc;flex-shrink:0"></span>
+        <input type="color" id="cat-color-2" value="#D4537E" style="opacity:0;width:0;height:0;position:absolute" onchange="updateCatColor(2,this.value)">
+      </label>
+    </td>
+    <td><input type="text" id="cat-name-2" value="Mua sắm sinh hoạt" style="font-weight:500;width:120px;padding:4px 8px;font-size:13px" onchange="updateCatName(2,this.value)"></td>
+    <td><span class="tag tag-expense">Chi tiêu</span></td>
+    <td><span class="tag tag-user" style="cursor:pointer;user-select:none" title="Nhấp để đổi" onclick="toggleEssential(&#39;c33de191-22a9-4212-a28c-2135e6771164&#39;,false,this)">✓ Thiết yếu</span></td>
+    <td style="color:var(--text3);font-size:12px;max-width:160px">
+      <span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="mua, shopee, lazada, tiki, sendo, order, đặt hàng, quần áo, giày, túi, mỹ phẩm, laptop, điện tử">mua, shopee, lazada, tiki, sendo, order, đặt hàng, quần áo, giày, túi, mỹ phẩm, laptop, điện tử</span>
+    </td>
+    <td style="white-space:nowrap">
+      <button class="btn btn-ghost btn-sm" style="margin-right:3px" onclick="openEditCat(&#39;c33de191-22a9-4212-a28c-2135e6771164&#39;)">✏</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteCat(&#39;c33de191-22a9-4212-a28c-2135e6771164&#39;)">✕</button>
+    </td>
+  </tr><tr>
+    <td>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+        <span id="cat-color-dot-3" style="display:inline-block;width:22px;height:22px;border-radius:5px;background:#ba7517;border:1px solid #ccc;flex-shrink:0"></span>
+        <input type="color" id="cat-color-3" value="#ba7517" style="opacity:0;width:0;height:0;position:absolute" onchange="updateCatColor(3,this.value)">
+      </label>
+    </td>
+    <td><input type="text" id="cat-name-3" value="Hóa đơn" style="font-weight:500;width:120px;padding:4px 8px;font-size:13px" onchange="updateCatName(3,this.value)"></td>
+    <td><span class="tag tag-expense">Chi tiêu</span></td>
+    <td><span class="tag tag-user" style="cursor:pointer;user-select:none" title="Nhấp để đổi" onclick="toggleEssential(&#39;5134448b-0172-42e5-bb4a-787500142c74&#39;,false,this)">✓ Thiết yếu</span></td>
+    <td style="color:var(--text3);font-size:12px;max-width:160px">
+      <span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="điện, nước, internet, wifi, phone bill, tiền nhà, thuê nhà, hóa đơn, phí, bảo hiểm">điện, nước, internet, wifi, phone bill, tiền nhà, thuê nhà, hóa đơn, phí, bảo hiểm</span>
+    </td>
+    <td style="white-space:nowrap">
+      <button class="btn btn-ghost btn-sm" style="margin-right:3px" onclick="openEditCat(&#39;5134448b-0172-42e5-bb4a-787500142c74&#39;)">✏</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteCat(&#39;5134448b-0172-42e5-bb4a-787500142c74&#39;)">✕</button>
+    </td>
+  </tr><tr>
+    <td>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+        <span id="cat-color-dot-4" style="display:inline-block;width:22px;height:22px;border-radius:5px;background:#1D9E75;border:1px solid #ccc;flex-shrink:0"></span>
+        <input type="color" id="cat-color-4" value="#1D9E75" style="opacity:0;width:0;height:0;position:absolute" onchange="updateCatColor(4,this.value)">
+      </label>
+    </td>
+    <td><input type="text" id="cat-name-4" value="Sức khoẻ" style="font-weight:500;width:120px;padding:4px 8px;font-size:13px" onchange="updateCatName(4,this.value)"></td>
+    <td><span class="tag tag-expense">Chi tiêu</span></td>
+    <td><span class="tag tag-user" style="cursor:pointer;user-select:none" title="Nhấp để đổi" onclick="toggleEssential(&#39;0cc67066-3c57-473d-85d2-9ca7d4c7e269&#39;,false,this)">✓ Thiết yếu</span></td>
+    <td style="color:var(--text3);font-size:12px;max-width:160px">
+      <span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="thuốc, bệnh viện, phòng khám, khám, nha sĩ, gym, thể dục, vitamin">thuốc, bệnh viện, phòng khám, khám, nha sĩ, gym, thể dục, vitamin</span>
+    </td>
+    <td style="white-space:nowrap">
+      <button class="btn btn-ghost btn-sm" style="margin-right:3px" onclick="openEditCat(&#39;0cc67066-3c57-473d-85d2-9ca7d4c7e269&#39;)">✏</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteCat(&#39;0cc67066-3c57-473d-85d2-9ca7d4c7e269&#39;)">✕</button>
+    </td>
+  </tr><tr>
+    <td>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+        <span id="cat-color-dot-5" style="display:inline-block;width:22px;height:22px;border-radius:5px;background:#7F77DD;border:1px solid #ccc;flex-shrink:0"></span>
+        <input type="color" id="cat-color-5" value="#7F77DD" style="opacity:0;width:0;height:0;position:absolute" onchange="updateCatColor(5,this.value)">
+      </label>
+    </td>
+    <td><input type="text" id="cat-name-5" value="Giải trí" style="font-weight:500;width:120px;padding:4px 8px;font-size:13px" onchange="updateCatName(5,this.value)"></td>
+    <td><span class="tag tag-expense">Chi tiêu</span></td>
+    <td><span class="tag tag-ai" style="cursor:pointer;user-select:none" title="Nhấp để đổi" onclick="toggleEssential(&#39;0828d7dd-c253-41e9-9b42-6123ccbd84e0&#39;,true,this)">✗ Không thiết yếu</span></td>
+    <td style="color:var(--text3);font-size:12px;max-width:160px">
+      <span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="netflix, spotify, youtube, game, cinema, rạp, xem phim, karaoke, du lịch, travel, khách sạn, resort, vui chơi">netflix, spotify, youtube, game, cinema, rạp, xem phim, karaoke, du lịch, travel, khách sạn, resort, vui chơi</span>
+    </td>
+    <td style="white-space:nowrap">
+      <button class="btn btn-ghost btn-sm" style="margin-right:3px" onclick="openEditCat(&#39;0828d7dd-c253-41e9-9b42-6123ccbd84e0&#39;)">✏</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteCat(&#39;0828d7dd-c253-41e9-9b42-6123ccbd84e0&#39;)">✕</button>
+    </td>
+  </tr><tr>
+    <td>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+        <span id="cat-color-dot-6" style="display:inline-block;width:22px;height:22px;border-radius:5px;background:#0F6E56;border:1px solid #ccc;flex-shrink:0"></span>
+        <input type="color" id="cat-color-6" value="#0F6E56" style="opacity:0;width:0;height:0;position:absolute" onchange="updateCatColor(6,this.value)">
+      </label>
+    </td>
+    <td><input type="text" id="cat-name-6" value="Giáo dục" style="font-weight:500;width:120px;padding:4px 8px;font-size:13px" onchange="updateCatName(6,this.value)"></td>
+    <td><span class="tag tag-expense">Chi tiêu</span></td>
+    <td><span class="tag tag-user" style="cursor:pointer;user-select:none" title="Nhấp để đổi" onclick="toggleEssential(&#39;1d53fe3f-c4fe-47af-8442-fe753523d9f3&#39;,false,this)">✓ Thiết yếu</span></td>
+    <td style="color:var(--text3);font-size:12px;max-width:160px">
+      <span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="học, khóa học, sách, học phí, gia sư, tiếng anh, udemy, coursera, edx">học, khóa học, sách, học phí, gia sư, tiếng anh, udemy, coursera, edx</span>
+    </td>
+    <td style="white-space:nowrap">
+      <button class="btn btn-ghost btn-sm" style="margin-right:3px" onclick="openEditCat(&#39;1d53fe3f-c4fe-47af-8442-fe753523d9f3&#39;)">✏</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteCat(&#39;1d53fe3f-c4fe-47af-8442-fe753523d9f3&#39;)">✕</button>
+    </td>
+  </tr><tr>
+    <td>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+        <span id="cat-color-dot-7" style="display:inline-block;width:22px;height:22px;border-radius:5px;background:#1D9E75;border:1px solid #ccc;flex-shrink:0"></span>
+        <input type="color" id="cat-color-7" value="#1D9E75" style="opacity:0;width:0;height:0;position:absolute" onchange="updateCatColor(7,this.value)">
+      </label>
+    </td>
+    <td><input type="text" id="cat-name-7" value="Lương" style="font-weight:500;width:120px;padding:4px 8px;font-size:13px" onchange="updateCatName(7,this.value)"></td>
+    <td><span class="tag tag-income">Thu nhập</span></td>
+    <td><span class="tag tag-user" style="cursor:pointer;user-select:none" title="Nhấp để đổi" onclick="toggleEssential(&#39;598da03a-5865-4f8b-9cff-c0cac519a271&#39;,false,this)">✓ Thiết yếu</span></td>
+    <td style="color:var(--text3);font-size:12px;max-width:160px">
+      <span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="lương, luong, salary, lương tháng, luong thang">lương, luong, salary, lương tháng, luong thang</span>
+    </td>
+    <td style="white-space:nowrap">
+      <button class="btn btn-ghost btn-sm" style="margin-right:3px" onclick="openEditCat(&#39;598da03a-5865-4f8b-9cff-c0cac519a271&#39;)">✏</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteCat(&#39;598da03a-5865-4f8b-9cff-c0cac519a271&#39;)">✕</button>
+    </td>
+  </tr><tr>
+    <td>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+        <span id="cat-color-dot-8" style="display:inline-block;width:22px;height:22px;border-radius:5px;background:#0f6e56;border:1px solid #ccc;flex-shrink:0"></span>
+        <input type="color" id="cat-color-8" value="#0f6e56" style="opacity:0;width:0;height:0;position:absolute" onchange="updateCatColor(8,this.value)">
+      </label>
+    </td>
+    <td><input type="text" id="cat-name-8" value="Gia đình bank" style="font-weight:500;width:120px;padding:4px 8px;font-size:13px" onchange="updateCatName(8,this.value)"></td>
+    <td><span class="tag tag-income">Thu nhập</span></td>
+    <td><span class="tag tag-user" style="cursor:pointer;user-select:none" title="Nhấp để đổi" onclick="toggleEssential(&#39;08fca87b-087d-4f81-aaee-e65fd5134c67&#39;,false,this)">✓ Thiết yếu</span></td>
+    <td style="color:var(--text3);font-size:12px;max-width:160px">
+      <span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="mẹ, ba, ai đó cho, tặng, lì xì">mẹ, ba, ai đó cho, tặng, lì xì</span>
+    </td>
+    <td style="white-space:nowrap">
+      <button class="btn btn-ghost btn-sm" style="margin-right:3px" onclick="openEditCat(&#39;08fca87b-087d-4f81-aaee-e65fd5134c67&#39;)">✏</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteCat(&#39;08fca87b-087d-4f81-aaee-e65fd5134c67&#39;)">✕</button>
+    </td>
+  </tr><tr>
+    <td>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+        <span id="cat-color-dot-9" style="display:inline-block;width:22px;height:22px;border-radius:5px;background:#378ADD;border:1px solid #ccc;flex-shrink:0"></span>
+        <input type="color" id="cat-color-9" value="#378ADD" style="opacity:0;width:0;height:0;position:absolute" onchange="updateCatColor(9,this.value)">
+      </label>
+    </td>
+    <td><input type="text" id="cat-name-9" value="Freelance" style="font-weight:500;width:120px;padding:4px 8px;font-size:13px" onchange="updateCatName(9,this.value)"></td>
+    <td><span class="tag tag-income">Thu nhập</span></td>
+    <td><span class="tag tag-ai" style="cursor:pointer;user-select:none" title="Nhấp để đổi" onclick="toggleEssential(&#39;eb7fa2ce-133b-4832-bb3c-20f105297ef2&#39;,true,this)">✗ Không thiết yếu</span></td>
+    <td style="color:var(--text3);font-size:12px;max-width:160px">
+      <span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="freelance, hợp đồng, hop dong, dự án, du an, project">freelance, hợp đồng, hop dong, dự án, du an, project</span>
+    </td>
+    <td style="white-space:nowrap">
+      <button class="btn btn-ghost btn-sm" style="margin-right:3px" onclick="openEditCat(&#39;eb7fa2ce-133b-4832-bb3c-20f105297ef2&#39;)">✏</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteCat(&#39;eb7fa2ce-133b-4832-bb3c-20f105297ef2&#39;)">✕</button>
+    </td>
+  </tr><tr>
+    <td>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+        <span id="cat-color-dot-10" style="display:inline-block;width:22px;height:22px;border-radius:5px;background:#7F77DD;border:1px solid #ccc;flex-shrink:0"></span>
+        <input type="color" id="cat-color-10" value="#7F77DD" style="opacity:0;width:0;height:0;position:absolute" onchange="updateCatColor(10,this.value)">
+      </label>
+    </td>
+    <td><input type="text" id="cat-name-10" value="Đầu tư" style="font-weight:500;width:120px;padding:4px 8px;font-size:13px" onchange="updateCatName(10,this.value)"></td>
+    <td><span class="tag tag-income">Thu nhập</span></td>
+    <td><span class="tag tag-ai" style="cursor:pointer;user-select:none" title="Nhấp để đổi" onclick="toggleEssential(&#39;66f71899-49d9-4220-855c-4b91bad432d5&#39;,true,this)">✗ Không thiết yếu</span></td>
+    <td style="color:var(--text3);font-size:12px;max-width:160px">
+      <span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="cổ tức, co tuc, lãi, loi nhuan, lợi nhuận, đầu tư, dau tu, chứng khoán">cổ tức, co tuc, lãi, loi nhuan, lợi nhuận, đầu tư, dau tu, chứng khoán</span>
+    </td>
+    <td style="white-space:nowrap">
+      <button class="btn btn-ghost btn-sm" style="margin-right:3px" onclick="openEditCat(&#39;66f71899-49d9-4220-855c-4b91bad432d5&#39;)">✏</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteCat(&#39;66f71899-49d9-4220-855c-4b91bad432d5&#39;)">✕</button>
+    </td>
+  </tr><tr>
+    <td>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+        <span id="cat-color-dot-11" style="display:inline-block;width:22px;height:22px;border-radius:5px;background:#BA7517;border:1px solid #ccc;flex-shrink:0"></span>
+        <input type="color" id="cat-color-11" value="#BA7517" style="opacity:0;width:0;height:0;position:absolute" onchange="updateCatColor(11,this.value)">
+      </label>
+    </td>
+    <td><input type="text" id="cat-name-11" value="Cho thuê" style="font-weight:500;width:120px;padding:4px 8px;font-size:13px" onchange="updateCatName(11,this.value)"></td>
+    <td><span class="tag tag-income">Thu nhập</span></td>
+    <td><span class="tag tag-ai" style="cursor:pointer;user-select:none" title="Nhấp để đổi" onclick="toggleEssential(&#39;8ae2d37a-359f-4181-9a09-6835a3ebf4d9&#39;,true,this)">✗ Không thiết yếu</span></td>
+    <td style="color:var(--text3);font-size:12px;max-width:160px">
+      <span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="cho thuê, cho thue, tiền thuê, tien thue">cho thuê, cho thue, tiền thuê, tien thue</span>
+    </td>
+    <td style="white-space:nowrap">
+      <button class="btn btn-ghost btn-sm" style="margin-right:3px" onclick="openEditCat(&#39;8ae2d37a-359f-4181-9a09-6835a3ebf4d9&#39;)">✏</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteCat(&#39;8ae2d37a-359f-4181-9a09-6835a3ebf4d9&#39;)">✕</button>
+    </td>
+  </tr><tr>
+    <td>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+        <span id="cat-color-dot-12" style="display:inline-block;width:22px;height:22px;border-radius:5px;background:#888780;border:1px solid #ccc;flex-shrink:0"></span>
+        <input type="color" id="cat-color-12" value="#888780" style="opacity:0;width:0;height:0;position:absolute" onchange="updateCatColor(12,this.value)">
+      </label>
+    </td>
+    <td><input type="text" id="cat-name-12" value="Tiêu vì vui" style="font-weight:500;width:120px;padding:4px 8px;font-size:13px" onchange="updateCatName(12,this.value)"></td>
+    <td><span class="tag tag-expense">Chi tiêu</span></td>
+    <td><span class="tag tag-ai" style="cursor:pointer;user-select:none" title="Nhấp để đổi" onclick="toggleEssential(&#39;758e2f48-ad68-46aa-ac85-58777419b35e&#39;,true,this)">✗ Không thiết yếu</span></td>
+    <td style="color:var(--text3);font-size:12px;max-width:160px">
+      <span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="Bùi Lan Hương, BLH, album, báo, tạp chí, Dung Tổ Nhi, fibis, gom">Bùi Lan Hương, BLH, album, báo, tạp chí, Dung Tổ Nhi, fibis, gom</span>
+    </td>
+    <td style="white-space:nowrap">
+      <button class="btn btn-ghost btn-sm" style="margin-right:3px" onclick="openEditCat(&#39;758e2f48-ad68-46aa-ac85-58777419b35e&#39;)">✏</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteCat(&#39;758e2f48-ad68-46aa-ac85-58777419b35e&#39;)">✕</button>
+    </td>
+  </tr><tr>
+    <td>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+        <span id="cat-color-dot-13" style="display:inline-block;width:22px;height:22px;border-radius:5px;background:#888780;border:1px solid #ccc;flex-shrink:0"></span>
+        <input type="color" id="cat-color-13" value="#888780" style="opacity:0;width:0;height:0;position:absolute" onchange="updateCatColor(13,this.value)">
+      </label>
+    </td>
+    <td><input type="text" id="cat-name-13" value="Thu nhập khác" style="font-weight:500;width:120px;padding:4px 8px;font-size:13px" onchange="updateCatName(13,this.value)"></td>
+    <td><span class="tag tag-income">Thu nhập</span></td>
+    <td><span class="tag tag-ai" style="cursor:pointer;user-select:none" title="Nhấp để đổi" onclick="toggleEssential(&#39;fc7721c6-3e65-4a46-bbe5-723d7defd080&#39;,true,this)">✗ Không thiết yếu</span></td>
+    <td style="color:var(--text3);font-size:12px;max-width:160px">
+      <span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="">—</span>
+    </td>
+    <td style="white-space:nowrap">
+      <button class="btn btn-ghost btn-sm" style="margin-right:3px" onclick="openEditCat(&#39;fc7721c6-3e65-4a46-bbe5-723d7defd080&#39;)">✏</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteCat(&#39;fc7721c6-3e65-4a46-bbe5-723d7defd080&#39;)">✕</button>
+    </td>
+  </tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Classifier đã học</span>
+          <span style="font-size:12px;color:var(--text3)">Từ khoá user xác nhận</span>
+        </div>
+        <div class="card-body" style="padding:0">
+          <table>
+            <thead><tr><th>Keyword</th><th>Danh mục</th><th>Lần xác nhận</th><th></th></tr></thead>
+            <tbody id="override-table"></tbody>
+          </table>
+          <div id="override-empty" class="empty" style="display:none">Chưa có override nào</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Dữ liệu</span></div>
+        <div class="card-body" style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-ghost" onclick="exportJSON()">↓ Xuất JSON</button>
+          <button class="btn btn-ghost" onclick="document.getElementById(&#39;import-file&#39;).click()">↑ Nhập JSON</button>
+          <input type="file" id="import-file" accept=".json" style="display:none" onchange="importJSON(this)">
+          <button class="btn btn-danger" onclick="confirmReset()">Xoá toàn bộ dữ liệu</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Console</span>
+          <button class="btn btn-ghost btn-sm" onclick="clearLog()">Xoá</button>
+        </div>
+        <div class="card-body" style="padding:10px"><div id="log" class="console">Đang khởi động...<div class="info">[14:38:17] Khởi động...</div><div class="ok">[14:38:17] Sẵn sàng — 14 danh mục, 1 overrides</div></div></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- MODAL confirm reset -->
+<div class="modal-backdrop" id="modal-reset">
+  <div class="modal">
+    <h3>Xoá toàn bộ dữ liệu?</h3>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:20px">Hành động này không thể hoàn tác. Mọi giao dịch, danh mục và cài đặt sẽ bị xoá.</p>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="closeModal(&#39;modal-reset&#39;)">Huỷ</button>
+      <button class="btn btn-danger" onclick="resetAll()">Xoá tất cả</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL add/edit category -->
+<div class="modal-backdrop" id="modal-cat">
+  <div class="modal" style="width:460px;max-height:90vh;overflow-y:auto">
+    <h3 id="modal-cat-title">Thêm danh mục</h3>
+    <input type="hidden" id="cat-edit-id">
+    <div class="form-grid" style="margin-bottom:12px">
+      <div class="field">
+        <label>Tên danh mục</label>
+        <input type="text" id="cat-edit-name" placeholder="VD: Sức khoẻ, Lương...">
+      </div>
+      <div class="field">
+        <label>Màu</label>
+        <div style="display:flex;align-items:center;gap:8px">
+          <input type="color" id="cat-edit-color" value="#378ADD" style="width:44px;height:36px;padding:2px;border-radius:6px;cursor:pointer">
+          <span style="font-size:12px;color:var(--text3)">Nhấp để chọn màu</span>
+        </div>
+      </div>
+    </div>
+    <div class="form-grid" style="margin-bottom:12px">
+      <div class="field">
+        <label>Loại</label>
+        <select id="cat-edit-type">
+          <option value="expense">Chi tiêu</option>
+          <option value="income">Thu nhập</option>
+        </select>
+      </div>
+      <div class="field" style="display:flex;align-items:flex-end;gap:8px;padding-bottom:2px">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;color:var(--text2)">
+          <input type="checkbox" id="cat-edit-essential" style="width:16px;height:16px;accent-color:var(--green)">
+          Thiết yếu
+        </label>
+      </div>
+    </div>
+    <div class="field" style="margin-bottom:16px">
+      <label>Keywords tự động phân loại <span style="font-weight:400;color:var(--text3)">(cách nhau bởi dấu phẩy)</span></label>
+      <textarea id="cat-edit-keywords" placeholder="ăn sáng, grab, cà phê, nhà hàng..." style="min-height:72px"></textarea>
+      <div style="font-size:11px;color:var(--text3);margin-top:4px">Khi ghi chú chứa keyword này, giao dịch sẽ tự động gán vào danh mục</div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="closeModal(&#39;modal-cat&#39;)">Huỷ</button>
+      <button class="btn btn-success" onclick="saveCat()">Lưu danh mục</button>
+    </div>
+  </div>
+</div>
+<div class="modal-backdrop" id="modal-edit">
+  <div class="modal" style="width:420px">
+    <h3>Chỉnh sửa giao dịch</h3>
+    <input type="hidden" id="edit-id">
+    <input type="hidden" id="edit-type">
+    <div class="form-grid" style="margin-bottom:12px">
+      <div class="field">
+        <label>Số tiền (VND)</label>
+        <input type="number" id="edit-amount" min="1">
+      </div>
+      <div class="field">
+        <label>Ngày</label>
+        <input type="date" id="edit-date">
+      </div>
+    </div>
+    <div class="field" style="margin-bottom:12px">
+      <label>Ghi chú</label>
+      <input type="text" id="edit-note">
+    </div>
+    <div class="field" style="margin-bottom:16px">
+      <label>Danh mục</label>
+      <select id="edit-cat"></select>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="closeModal(&#39;modal-edit&#39;)">Huỷ</button>
+      <button class="btn btn-primary" onclick="saveEdit()">Lưu</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════
+function genId(){return crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,9)}
+const VI={à:'a',á:'a',ả:'a',ã:'a',ạ:'a',ă:'a',ắ:'a',ặ:'a',ằ:'a',ẳ:'a',ẵ:'a',â:'a',ấ:'a',ầ:'a',ẩ:'a',ẫ:'a',ậ:'a',è:'e',é:'e',ẻ:'e',ẽ:'e',ẹ:'e',ê:'e',ế:'e',ề:'e',ể:'e',ễ:'e',ệ:'e',ì:'i',í:'i',ỉ:'i',ĩ:'i',ị:'i',ò:'o',ó:'o',ỏ:'o',õ:'o',ọ:'o',ô:'o',ố:'o',ồ:'o',ổ:'o',ỗ:'o',ộ:'o',ơ:'o',ớ:'o',ờ:'o',ở:'o',ỡ:'o',ợ:'o',ù:'u',ú:'u',ủ:'u',ũ:'u',ụ:'u',ư:'u',ứ:'u',ừ:'u',ử:'u',ữ:'u',ự:'u',ỳ:'y',ý:'y',ỷ:'y',ỹ:'y',ỵ:'y',đ:'d'}
+function norm(s){return s.toLowerCase().replace(/[^\u0000-\u007E]/g,c=>VI[c]||c).trim()}
+function dateStr(d=new Date()){return`${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`}
+function p2(n){return String(n).padStart(2,'0')}
+function mPrefix(y,m){return`${y}-${p2(m)}`}
+function fmtVND(n){return new Intl.NumberFormat('vi-VN').format(Math.round(n))+'đ'}
+function fmtMonth(y,m){return new Date(y,m-1).toLocaleDateString('vi-VN',{month:'long',year:'numeric'})}
+const MONTHS_VI=['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12']
+
+// ══════════════════════════════════════════
+// DATABASE
+// ══════════════════════════════════════════
+const db=new Dexie('finance-v1')
+db.version(1).stores({
+  transactions:'id,type,date,categoryId,createdAt,deletedAt',
+  categories:'id,name,sortOrder',
+  allocationRules:'id',
+  classifierOverrides:'id,&keyword,categoryId'
+})
+db.version(2).stores({
+  transactions:'id,type,date,categoryId,createdAt,deletedAt',
+  categories:'id,name,sortOrder',
+  allocationRules:'id',
+  classifierOverrides:'id,&keyword,categoryId',
+  allocationHistory:'id,monthKey,savedAt'
+})
+
+// ══════════════════════════════════════════
+// SEED
+// ══════════════════════════════════════════
+const CATS=[
+  // ── Chi tiêu (txType: 'expense') ──
+  {name:'Ăn uống',color:'#E8593C',isEssential:true,txType:'expense',sortOrder:1,keywords:['ăn','uống','cơm','phở','bún','bánh','cafe','cà phê','trà','nhà hàng','quán','ăn sáng','ăn trưa','ăn tối','grab food','baemin','shopee food','đồ ăn']},
+  {name:'Di chuyển',color:'#378ADD',isEssential:true,txType:'expense',sortOrder:2,keywords:['grab','xe ôm','xe om','taxi','uber','be ','gojek','xăng','xang','đổ xăng','xe buýt','xe bus','vé tàu','vé xe','máy bay','parking','gửi xe','giữ xe']},
+  {name:'Mua sắm',color:'#D4537E',isEssential:false,txType:'expense',sortOrder:3,keywords:['mua','shopee','lazada','tiki','sendo','order','đặt hàng','quần áo','giày','túi','mỹ phẩm','laptop','điện tử']},
+  {name:'Hóa đơn',color:'#BA7517',isEssential:true,txType:'expense',sortOrder:4,keywords:['điện','nước','internet','wifi','phone bill','tiền nhà','thuê nhà','hóa đơn','phí','bảo hiểm']},
+  {name:'Sức khoẻ',color:'#1D9E75',isEssential:true,txType:'expense',sortOrder:5,keywords:['thuốc','bệnh viện','phòng khám','khám','nha sĩ','gym','thể dục','vitamin']},
+  {name:'Giải trí',color:'#7F77DD',isEssential:false,txType:'expense',sortOrder:6,keywords:['netflix','spotify','youtube','game','cinema','rạp','xem phim','karaoke','du lịch','travel','khách sạn','resort','vui chơi']},
+  {name:'Giáo dục',color:'#0F6E56',isEssential:false,txType:'expense',sortOrder:7,keywords:['học','khóa học','sách','học phí','gia sư','tiếng anh','udemy','coursera','edx']},
+  {name:'Chi khác',color:'#888780',isEssential:false,txType:'expense',sortOrder:98,keywords:[]},
+  // ── Thu nhập (txType: 'income') ──
+  {name:'Lương',color:'#1D9E75',isEssential:false,txType:'income',sortOrder:10,keywords:['lương','luong','salary','lương tháng','luong thang']},
+  {name:'Thưởng',color:'#0F6E56',isEssential:false,txType:'income',sortOrder:11,keywords:['thưởng','thuong','bonus','thưởng tết','thuong tet']},
+  {name:'Freelance',color:'#378ADD',isEssential:false,txType:'income',sortOrder:12,keywords:['freelance','hợp đồng','hop dong','dự án','du an','project']},
+  {name:'Đầu tư',color:'#7F77DD',isEssential:false,txType:'income',sortOrder:13,keywords:['cổ tức','co tuc','lãi','loi nhuan','lợi nhuận','đầu tư','dau tu','chứng khoán']},
+  {name:'Cho thuê',color:'#BA7517',isEssential:false,txType:'income',sortOrder:14,keywords:['cho thuê','cho thue','tiền thuê','tien thue']},
+  {name:'Thu nhập khác',color:'#888780',isEssential:false,txType:'income',sortOrder:99,keywords:[]}
+]
+const RULES=[
+  {label:'Tiết kiệm',percent:30,color:'#1D9E75',isDefault:true},
+  {label:'Dự phòng',percent:20,color:'#BA7517',isDefault:true},
+  {label:'Đầu tư',percent:30,color:'#378ADD',isDefault:true},
+  {label:'Giải trí',percent:20,color:'#7F77DD',isDefault:true}
+]
+async function seed(){
+  const[cc,rc]=await Promise.all([db.categories.count(),db.allocationRules.count()])
+  if(cc===0){await db.categories.bulkAdd(CATS.map(c=>({...c,id:genId()})));log('ok',`Seed ${CATS.length} danh mục`)}
+  if(rc===0){await db.allocationRules.bulkAdd(RULES.map(r=>({...r,id:genId()})));log('ok',`Seed ${RULES.length} quy tắc`)}
+}
+
+// ══════════════════════════════════════════
+// CLASSIFIER
+// ══════════════════════════════════════════
+const clf={ovs:new Map(),cats:[],fallId:'',ready:false,
+  async load(){
+    const[c,o]=await Promise.all([db.categories.orderBy('sortOrder').toArray(),db.classifierOverrides.toArray()])
+    this.cats=c
+    // fallback riêng cho từng loại
+    this.fallExpId=(c.find(x=>x.txType==='expense'&&!x.keywords.length)||c.find(x=>x.txType==='expense')||c[c.length-1]).id
+    this.fallIncId=(c.find(x=>x.txType==='income'&&!x.keywords.length)||c.find(x=>x.txType==='income')||c[c.length-1]).id
+    this.fallId=this.fallExpId // backward compat
+    this.ovs.clear();o.forEach(x=>this.ovs.set(x.keyword,x));this.ready=true
+  },
+  run(note,txType='expense'){
+    if(!this.ready)return{categoryId:txType==='income'?this.fallIncId:this.fallExpId,confidence:'low',source:'fallback'}
+    const n=norm(note)
+    // chỉ tìm override thuộc đúng txType
+    let best=null
+    for(const[kw,ov]of this.ovs){
+      const cat=this.cats.find(c=>c.id===ov.categoryId)
+      if((!cat?.txType||cat?.txType===txType)&&n.includes(kw)&&(!best||kw.length>best.keyword.length))best=ov
+    }
+    if(best)return{categoryId:best.categoryId,confidence:best.count>=2?'high':'low',source:'override'}
+    // chỉ match keyword thuộc đúng txType
+    let bm=null
+    for(const cat of this.cats){
+      if((cat.txType&&cat.txType!==txType)||!cat.keywords.length)continue
+      for(const kw of cat.keywords){const nk=norm(kw);if(n.includes(nk)&&(!bm||nk.length>bm.len))bm={categoryId:cat.id,len:nk.length}}
+    }
+    if(bm)return{categoryId:bm.categoryId,confidence:'high',source:'keyword'}
+    return{categoryId:txType==='income'?this.fallIncId:this.fallExpId,confidence:'low',source:'fallback'}
+  },
+  async confirm(note,catId){
+    const k=norm(note),ex=this.ovs.get(k)
+    if(ex){ex.count++;await db.classifierOverrides.update(ex.id,{count:ex.count})}
+    else{const o={id:genId(),keyword:k,categoryId:catId,count:1};await db.classifierOverrides.add(o);this.ovs.set(k,o)}
+  },
+  async correct(note,wrongId,rightId){
+    const k=norm(note),ex=this.ovs.get(k)
+    if(ex){ex.categoryId=rightId;ex.count=1;await db.classifierOverrides.update(ex.id,{categoryId:rightId,count:1})}
+    else{const o={id:genId(),keyword:k,categoryId:rightId,count:1};await db.classifierOverrides.add(o);this.ovs.set(k,o)}
+  },
+  async reload(){this.loaded=false;await this.load()},
+  async delOv(keyword){const k=norm(keyword),ex=this.ovs.get(k);if(ex){await db.classifierOverrides.delete(ex.id);this.ovs.delete(k)}}
+}
+
+// ══════════════════════════════════════════
+// SERVICES
+// ══════════════════════════════════════════
+async function addTxDB(input){
+  if(!['income','expense'].includes(input.type))throw new Error('type không hợp lệ')
+  if(!input.amount||input.amount<=0)throw new Error('Số tiền phải > 0')
+  if(!input.note?.trim())throw new Error('Ghi chú không được trống')
+  let catId=input.categoryId,auto=false
+  if(!catId){const r=clf.run(input.note,input.type);catId=r.categoryId;auto=true}
+  const tx={id:genId(),type:input.type,amount:+input.amount,note:input.note.trim(),categoryId:catId,date:input.date||dateStr(),autoLabeled:auto,createdAt:Date.now()}
+  await db.transactions.add(tx);return tx
+}
+async function removeTxDB(id){await db.transactions.update(id,{deletedAt:Date.now()})}
+async function relabelTx(id,newCatId){
+  const tx=await db.transactions.get(id)
+  if(!tx)return
+  if(tx.autoLabeled&&tx.categoryId!==newCatId)await clf.correct(tx.note,tx.categoryId,newCatId)
+  else await clf.confirm(tx.note,newCatId)
+  await db.transactions.update(id,{categoryId:newCatId,autoLabeled:false})
+}
+async function listByMonth(y,m){
+  const pfx=mPrefix(y,m)
+  const txs=await db.transactions.where('date').startsWith(pfx).toArray()
+  return txs.filter(t=>!t.deletedAt).sort((a,b)=>b.createdAt-a.createdAt)
+}
+async function sumByMonth(y,m){
+  const txs=await listByMonth(y,m);let inc=0,exp=0
+  txs.forEach(t=>t.type==='income'?inc+=t.amount:exp+=t.amount)
+  return{year:y,month:m,income:inc,expense:exp,surplus:inc-exp}
+}
+async function sumByCat(y,m){
+  const[txs,cats]=await Promise.all([listByMonth(y,m),db.categories.toArray()])
+  const cm=new Map(cats.map(c=>[c.id,c])),tot=new Map();let te=0
+  txs.filter(t=>t.type==='expense').forEach(t=>{te+=t.amount;tot.set(t.categoryId,(tot.get(t.categoryId)||0)+t.amount)})
+  return[...tot.entries()].map(([id,total])=>{
+    const c=cm.get(id)||{name:'?',color:'#888',isEssential:false}
+    return{categoryId:id,name:c.name,color:c.color,isEssential:c.isEssential,total,pct:te>0?Math.round(total/te*100):0}
+  }).sort((a,b)=>b.total-a.total)
+}
+async function trend6(){
+  const r=[],now=new Date()
+  for(let i=5;i>=0;i--){const d=new Date(now.getFullYear(),now.getMonth()-i,1);r.push(await sumByMonth(d.getFullYear(),d.getMonth()+1))}
+  return r
+}
+function getAlerts(cur,prev){
+  const a=[]
+  if(cur.expense>cur.income)a.push({level:'danger',msg:`Chi tiêu vượt thu nhập ${fmtVND(cur.expense-cur.income)}`})
+  else if(cur.income>0&&cur.expense/cur.income>0.5)a.push({level:'warning',msg:`Chi tiêu đang chiếm ${Math.round(cur.expense/cur.income*100)}% thu nhập`})
+  if(prev&&prev.expense>0){const g=(cur.expense-prev.expense)/prev.expense;if(g>0.2)a.push({level:'warning',msg:`Chi tiêu tăng ${Math.round(g*100)}% so với tháng trước`})}
+  return a
+}
+function getRecs(cur,cats){
+  const r=[]
+  if(cur.surplus>0)r.push(`Thặng dư ${fmtVND(cur.surplus)} — hãy phân bổ ngay`)
+  cats.filter(c=>c.pct>40).forEach(c=>r.push(`"${c.name}" chiếm ${c.pct}% chi tiêu`))
+  if(cur.income===0)r.push('Chưa ghi nhận thu nhập tháng này')
+  return r
+}
+function applyRules(surplus,rules){
+  if(surplus<=0)return[]
+  return rules.map(r=>({...r,amount:Math.round(surplus*r.percent/100)}))
+}
+
+// ══════════════════════════════════════════
+// CHARTS
+// ══════════════════════════════════════════
+let chartTrend=null,chartTrend2=null,chartDonut=null
+function destroyChart(c){if(c){try{c.destroy()}catch(e){}}}
+function makeBarChart(id,labels,incomes,expenses){
+  const ctx=document.getElementById(id)
+  if(!ctx)return null
+  return new Chart(ctx,{type:'bar',data:{labels,datasets:[
+    {label:'Thu',data:incomes,backgroundColor:'#1D9E7540',borderColor:'#1D9E75',borderWidth:1.5,borderRadius:4},
+    {label:'Chi',data:expenses,backgroundColor:'#E8593C30',borderColor:'#E8593C',borderWidth:1.5,borderRadius:4}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:{size:12},boxWidth:12}}},scales:{y:{ticks:{callback:v=>fmtVND(v)},grid:{color:'#f0f0ec'}},x:{grid:{display:false}}}}})
+}
+function makeDonut(id,labels,data,colors){
+  const ctx=document.getElementById(id)
+  if(!ctx)return null
+  return new Chart(ctx,{type:'doughnut',data:{labels,datasets:[{data,backgroundColor:colors,borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:'65%'}})
+}
+
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+let curYear=new Date().getFullYear(),curMonth=new Date().getMonth()+1
+let txType='expense',allCats=[],allRules=[],curSurplus=0
+
+function catById(id){return allCats.find(c=>c.id===id)||{name:'?',color:'#888',isEssential:false}}
+
+// ══════════════════════════════════════════
+// LOG
+// ══════════════════════════════════════════
+function log(type,msg){
+  const el=document.getElementById('log');if(!el)return
+  const line=document.createElement('div');line.className=type
+  line.textContent=`[${new Date().toLocaleTimeString('vi-VN')}] ${msg}`
+  el.appendChild(line);el.scrollTop=el.scrollHeight
+}
+function clearLog(){const el=document.getElementById('log');if(el)el.innerHTML=''}
+
+// ══════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════
+const PAGES=['dashboard','add','ledger','analytics','surplus','settings']
+function nav(page){
+  PAGES.forEach(p=>{
+    document.getElementById('page-'+p).classList.toggle('active',p===page)
+    document.querySelectorAll('.nav-item').forEach((el,i)=>el.classList.toggle('active',PAGES[i]===page))
+  })
+  if(page==='dashboard')renderDashboard()
+  if(page==='ledger')renderLedger()
+  if(page==='analytics')renderAnalytics()
+  if(page==='surplus')renderSurplus()
+  if(page==='settings')renderSettings()
+}
+
+function changeMonth(d){
+  curMonth+=d
+  if(curMonth>12){curMonth=1;curYear++}
+  if(curMonth<1){curMonth=12;curYear--}
+  const lbl=`${MONTHS_VI[curMonth-1]} ${curYear}`
+  const mn=document.getElementById('month-nav-label'),ll=document.getElementById('ledger-month-label'),dl=document.getElementById('dash-month-label')
+  if(mn)mn.textContent=lbl
+  if(ll)ll.textContent=lbl
+  if(dl)dl.textContent=lbl
+  const active=document.querySelector('.page.active')
+  if(active?.id==='page-dashboard')renderDashboard()
+  if(active?.id==='page-ledger')renderLedger()
+}
+
+// ══════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════
+async function renderDashboard(){
+  const[summary,catSums,prevSummary,trend]=await Promise.all([
+    sumByMonth(curYear,curMonth),
+    sumByCat(curYear,curMonth),
+    sumByMonth(curYear,curMonth===1?12:curMonth-1),
+    trend6()
+  ])
+
+  // Stats
+  document.getElementById('dash-stats').innerHTML=`
+    <div class="stat-card"><div class="stat-label">Thu nhập</div><div class="stat-value green">${fmtVND(summary.income)}</div></div>
+    <div class="stat-card"><div class="stat-label">Chi tiêu</div><div class="stat-value red">${fmtVND(summary.expense)}</div></div>
+    <div class="stat-card"><div class="stat-label">Thặng dư</div><div class="stat-value ${summary.surplus>=0?'blue':'red'}">${fmtVND(summary.surplus)}</div></div>
+  `
+
+  // Alerts
+  const alerts=getAlerts(summary,prevSummary)
+  document.getElementById('dash-alerts').innerHTML=alerts.map(a=>
+    `<div class="alert alert-${a.level}">⚠ ${a.msg}</div>`).join('')
+
+  // Trend chart
+  const labels=trend.map(t=>`T${t.month}`)
+  destroyChart(chartTrend)
+  chartTrend=makeBarChart('chart-trend',labels,trend.map(t=>t.income),trend.map(t=>t.expense))
+
+  // Donut
+  destroyChart(chartDonut)
+  if(catSums.length){
+    chartDonut=makeDonut('chart-donut',catSums.map(c=>c.name),catSums.map(c=>c.total),catSums.map(c=>c.color))
+    document.getElementById('cat-legend').innerHTML=catSums.slice(0,6).map(c=>
+      `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;font-size:12px">
+        <div><span class="dot" style="background:${c.color}"></span>${c.name}</div>
+        <div style="font-weight:600">${c.pct}%</div>
+      </div>`).join('')
+  } else {
+    document.getElementById('cat-legend').innerHTML='<div style="color:var(--text3);font-size:12px">Chưa có dữ liệu</div>'
+  }
+
+  // Recs
+  const recs=getRecs(summary,catSums)
+  document.getElementById('dash-recs').innerHTML=recs.length
+    ?'<div class="card"><div class="card-header"><span class="card-title">Khuyến nghị</span></div><div class="card-body">'+
+      recs.map(r=>`<div class="rec">💡 ${r}</div>`).join('')+'</div></div>'
+    :''
+}
+
+// ══════════════════════════════════════════
+// ADD TRANSACTION
+// ══════════════════════════════════════════
+function setType(t){
+  txType=t
+  document.getElementById('btn-expense').className='type-btn'+(t==='expense'?' expense':'')
+  document.getElementById('btn-income').className='type-btn'+(t==='income'?' income':'')
+  // Cập nhật danh sách danh mục theo loại
+  const sel=document.getElementById('inp-cat')
+  // fallback: nếu DB cũ không có txType, hiện tất cả
+  const filtered=allCats.filter(c=>!c.txType||c.txType===t)
+  sel.innerHTML='<option value="">-- Tự động phân loại --</option>'+
+    filtered.map(c=>`<option value="${c.id}">${c.name}</option>`).join('')
+  // Re-preview nếu đang có note
+  const note=document.getElementById('inp-note').value
+  if(note.trim())onNoteInput(note)
+}
+function onNoteInput(note){
+  const el=document.getElementById('classify-preview')
+  if(!note.trim()){el.style.display='none';return}
+  const r=clf.run(note,txType),cat=catById(r.categoryId)
+  el.style.display='flex'
+  el.innerHTML=`<span class="dot" style="background:${cat.color}"></span>
+    <strong>${cat.name}</strong>
+    <span class="tag tag-${r.confidence}" style="margin-left:4px">${r.confidence==='high'?'Chắc chắn':'Không chắc'}</span>
+    <span style="color:var(--text3);font-size:11px;margin-left:4px">${r.source}</span>`
+}
+async function addTx(){
+  const amt=parseFloat(document.getElementById('inp-amount').value)
+  const note=document.getElementById('inp-note').value
+  const date=document.getElementById('inp-date').value
+  const catId=document.getElementById('inp-cat').value||undefined
+  try{
+    const tx=await addTxDB({type:txType,amount:amt,note,date,categoryId:catId})
+    const cat=catById(tx.categoryId)
+    log('ok',`✓ ${txType==='income'?'+':'-'}${fmtVND(tx.amount)} "${tx.note}" → ${cat.name}`)
+    document.getElementById('inp-amount').value=''
+    document.getElementById('inp-note').value=''
+    document.getElementById('classify-preview').style.display='none'
+    nav('ledger')
+  }catch(e){log('err','Lỗi: '+e.message)}
+}
+
+// ══════════════════════════════════════════
+// LEDGER
+// ══════════════════════════════════════════
+async function renderLedger(){
+  const txs=await listByMonth(curYear,curMonth)
+  const tbody=document.getElementById('ledger-body')
+  const empty=document.getElementById('ledger-empty')
+  if(!txs.length){tbody.innerHTML='';empty.style.display='block';return}
+  empty.style.display='none'
+  const catOpts=allCats.map(c=>`<option value="${c.id}">${c.name}</option>`).join('')
+  tbody.innerHTML=txs.map(tx=>{
+    const cat=catById(tx.categoryId)
+    const opts=allCats.filter(c=>c.txType===tx.type).map(c=>`<option value="${c.id}"${c.id===tx.categoryId?' selected':''}>${c.name}</option>`).join('')
+    return`<tr>
+      <td style="color:var(--text3);font-size:12px;white-space:nowrap">${tx.date.slice(5).replace('-','/')}</td>
+      <td style="max-width:180px"><div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${tx.note}">${tx.note}</div></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:4px">
+          <span class="dot" style="background:${cat.color}"></span>
+          <select style="font-size:12px;padding:2px 6px;border-radius:6px;border:1px solid var(--border)" onchange="onRelabel('${tx.id}',this.value)">${opts}</select>
+        </div>
+      </td>
+      <td><span class="tag tag-${tx.autoLabeled?'ai':'user'}">${tx.autoLabeled?'AI':'User'}</span></td>
+      <td style="text-align:right;font-weight:600;white-space:nowrap;color:${tx.type==='income'?'var(--green)':'var(--red)'}">${tx.type==='income'?'+':'-'}${fmtVND(tx.amount)}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-ghost btn-sm" onclick="openEdit('${tx.id}')" style="margin-right:4px">✏</button>
+        <button class="btn btn-danger btn-sm" onclick="onRemove('${tx.id}')">✕</button>
+      </td>
+    </tr>`
+  }).join('')
+}
+async function openEdit(id){
+  const tx=await db.transactions.get(id)
+  if(!tx)return
+  document.getElementById('edit-id').value=tx.id
+  document.getElementById('edit-type').value=tx.type
+  document.getElementById('edit-amount').value=tx.amount
+  document.getElementById('edit-date').value=tx.date
+  document.getElementById('edit-note').value=tx.note
+  const sel=document.getElementById('edit-cat')
+  sel.innerHTML=allCats.filter(c=>!c.txType||c.txType===tx.type).map(c=>`<option value="${c.id}"${c.id===tx.categoryId?' selected':''}>${c.name}</option>`).join('')
+  document.getElementById('modal-edit').classList.add('open')
+}
+async function saveEdit(){
+  const id=document.getElementById('edit-id').value
+  const amount=parseFloat(document.getElementById('edit-amount').value)
+  const date=document.getElementById('edit-date').value
+  const note=document.getElementById('edit-note').value.trim()
+  const categoryId=document.getElementById('edit-cat').value
+  if(!amount||amount<=0){log('err','Số tiền phải > 0');return}
+  if(!note){log('err','Ghi chú không được trống');return}
+  await db.transactions.update(id,{amount,date,note,categoryId,autoLabeled:false})
+  log('ok',`Đã cập nhật giao dịch: "${note}"`)
+  closeModal('modal-edit')
+  await renderLedger()
+}
+async function onRelabel(id,newCatId){
+  await relabelTx(id,newCatId)
+  log('info',`Relabel → ${catById(newCatId).name}`)
+  await renderLedger()
+}
+async function onRemove(id){
+  await removeTxDB(id);log('info','Đã xoá giao dịch')
+  await renderLedger()
+}
+
+// ══════════════════════════════════════════
+// ANALYTICS
+// ══════════════════════════════════════════
+async function renderAnalytics(){
+  const now=new Date()
+  const y=now.getFullYear(),m=now.getMonth()+1
+  const[summary,catSums,prev,trendData]=await Promise.all([
+    sumByMonth(y,m),sumByCat(y,m),
+    sumByMonth(y,m===1?12:m-1),trend6()
+  ])
+
+  const alerts=getAlerts(summary,prev)
+  document.getElementById('ana-alerts').innerHTML=alerts.map(a=>
+    `<div class="alert alert-${a.level}">⚠ ${a.msg}</div>`).join('')
+
+  document.getElementById('ana-cat-table').innerHTML=catSums.length
+    ?catSums.map(c=>`<tr>
+        <td><span class="dot" style="background:${c.color}"></span>${c.name}</td>
+        <td>
+          <span class="tag ${c.isEssential?'tag-user':'tag-ai'}" style="cursor:pointer;user-select:none" title="Nhấp để đổi" onclick="toggleEssential('${c.categoryId}',${!c.isEssential},this)">
+            ${c.isEssential?'✓ Thiết yếu':'✗ Không thiết yếu'}
+          </span>
+        </td>
+        <td>${fmtVND(c.total)}</td>
+        <td style="text-align:right;font-weight:600">${c.pct}%</td>
+      </tr>`).join('')
+    :'<tr><td colspan="4" class="empty">Chưa có dữ liệu</td></tr>'
+
+  destroyChart(chartTrend2)
+  chartTrend2=makeBarChart('chart-trend2',trendData.map(t=>`T${t.month}`),trendData.map(t=>t.income),trendData.map(t=>t.expense))
+
+  const recs=getRecs(summary,catSums)
+  document.getElementById('ana-recs').innerHTML=recs.map(r=>`<div class="rec">💡 ${r}</div>`).join('')
+}
+
+// ══════════════════════════════════════════
+// SURPLUS
+// ══════════════════════════════════════════
+async function renderSurplus(){
+  const now=new Date()
+  const summary=await sumByMonth(now.getFullYear(),now.getMonth()+1)
+  allRules=await db.allocationRules.toArray()
+  const surplus=summary.income-summary.expense
+  curSurplus=surplus
+  const allocs=applyRules(surplus,allRules)
+
+  document.getElementById('surplus-val').textContent=fmtVND(surplus)
+  document.getElementById('surplus-val').style.color=surplus>=0?'var(--green)':'var(--red)'
+  document.getElementById('surplus-sub').textContent=`Thu ${fmtVND(summary.income)} − Chi ${fmtVND(summary.expense)}`
+
+  document.getElementById('surplus-bar').innerHTML=allocs.length&&surplus>0
+    ?allocs.map(a=>`<div class="surplus-seg" style="width:${a.percent}%;background:${a.color}" title="${a.label}: ${a.percent}%">${a.percent}%</div>`).join('')
+    :'<div style="flex:1;background:var(--border);border-radius:6px"></div>'
+
+  // Bảng phân bổ (live - cập nhật khi kéo slider)
+  const allocTbl=document.getElementById('surplus-alloc-table')
+  allocTbl.innerHTML=`<table style="margin-top:12px">
+    <thead><tr>
+      <th>Mục phân bổ</th>
+      <th>Tỉ lệ</th>
+      <th style="text-align:right">Số tiền</th>
+    </tr></thead>
+    <tbody id="alloc-live-tbody"></tbody>
+  </table>`
+
+  renderRuleEditor()
+  updateLiveAlloc()
+  await renderAllocHistory()
+}
+
+function renderRuleEditor(){
+  document.getElementById('rule-editor').innerHTML=allRules.map((r,i)=>`
+    <div class="rule-row" data-idx="${i}">
+      <label style="cursor:pointer;position:relative;flex-shrink:0" title="Đổi màu">
+        <span id="rl-dot-${i}" class="dot" style="background:${r.color};width:18px;height:18px;cursor:pointer"></span>
+        <input type="color" value="${r.color}" style="opacity:0;width:0;height:0;position:absolute" class="rl-color" data-idx="${i}" onchange="onColorChange(${i},this.value)">
+      </label>
+      <input type="text" value="${r.label}" style="width:110px" class="rl-label" data-id="${r.id}" data-color="${r.color}">
+      <input type="range" min="0" max="100" value="${r.percent}" class="rl-range" oninput="onRangeInput(${i},this.value)">
+      <span class="rule-pct" id="rl-pct-${i}">${r.percent}%</span>
+      <button class="btn btn-danger btn-sm" onclick="removeRuleRow(${i})">✕</button>
+    </div>`).join('')
+  checkRuleSum()
+}
+function onColorChange(i,val){
+  const dot=document.getElementById('rl-dot-'+i)
+  if(dot)dot.style.background=val
+  // Update label data-color
+  const labels=[...document.querySelectorAll('.rl-label')]
+  if(labels[i])labels[i].dataset.color=val
+  updateLiveAlloc()
+}
+
+function onRangeInput(i,val){
+  document.getElementById('rl-pct-'+i).textContent=val+'%'
+  checkRuleSum()
+  updateLiveAlloc()
+}
+
+function checkRuleSum(){
+  const vals=[...document.querySelectorAll('.rl-range')].map(r=>parseInt(r.value)||0)
+  const total=vals.reduce((s,v)=>s+v,0)
+  const err=document.getElementById('rule-error')
+  if(Math.round(total)!==100){err.style.display='block';err.textContent=`Tổng hiện tại: ${total}% (phải bằng 100%)`}
+  else{err.style.display='none'}
+}
+
+function updateLiveAlloc(){
+  const labels=[...document.querySelectorAll('.rl-label')]
+  const ranges=[...document.querySelectorAll('.rl-range')]
+  if(!labels.length)return
+  const colors=[...document.querySelectorAll('.rl-color')]
+  const liveRules=labels.map((el,i)=>({
+    label:el.value||'?',color:colors[i]?.value||el.dataset.color||'#888',
+    percent:parseInt(ranges[i]?.value)||0
+  }))
+  const surplus=curSurplus
+  // Bar
+  document.getElementById('surplus-bar').innerHTML=surplus>0
+    ?liveRules.filter(r=>r.percent>0).map(r=>`<div class="surplus-seg" style="width:${r.percent}%;background:${r.color}" title="${r.label}: ${r.percent}%">${r.percent}%</div>`).join('')
+    :'<div style="flex:1;background:var(--border);border-radius:6px"></div>'
+  // Table
+  const tbody=document.getElementById('alloc-live-tbody')
+  if(!tbody)return
+  if(surplus<=0){tbody.innerHTML='<tr><td colspan="3" style="color:var(--red);padding:10px">Không có thặng dư để phân bổ</td></tr>';return}
+  tbody.innerHTML=liveRules.map(r=>`<tr>
+    <td><span class="dot" style="background:${r.color}"></span><strong>${r.label}</strong></td>
+    <td style="color:var(--text3)">${r.percent}%</td>
+    <td style="text-align:right;font-weight:700;font-size:15px">${fmtVND(Math.round(surplus*r.percent/100))}</td>
+  </tr>`).join('')
+}
+
+function addRuleRow(){
+  allRules.push({id:genId(),label:'Mục mới',percent:0,color:'#888',isDefault:false})
+  renderRuleEditor()
+}
+function removeRuleRow(i){allRules.splice(i,1);renderRuleEditor()}
+
+async function saveRules(){
+  const labels=[...document.querySelectorAll('.rl-label')]
+  const ranges=[...document.querySelectorAll('.rl-range')]
+  const colors=[...document.querySelectorAll('.rl-color')]
+  const rules=labels.map((el,i)=>({
+    id:el.dataset.id||genId(),label:el.value,color:colors[i]?.value||el.dataset.color||'#888',
+    percent:parseInt(ranges[i].value)||0,isDefault:false
+  }))
+  const total=rules.reduce((s,r)=>s+r.percent,0)
+  if(Math.round(total)!==100){log('err',`Tổng % = ${total}, phải bằng 100`);return}
+  await db.transaction('rw',db.allocationRules,async()=>{
+    await db.allocationRules.clear();await db.allocationRules.bulkAdd(rules)
+  })
+  allRules=rules
+  // Snapshot lịch sử tháng hiện tại
+  await snapshotAllocHistory(rules)
+  log('ok','Đã lưu quy tắc phân bổ & ghi nhận lịch sử');await renderSurplus()
+}
+
+async function snapshotAllocHistory(rules){
+  const now=new Date()
+  const y=now.getFullYear(),m=now.getMonth()+1
+  const monthKey=mPrefix(y,m)
+  const summary=await sumByMonth(y,m)
+  const surplus=summary.income-summary.expense
+  const allocs=rules.map(r=>({label:r.label,color:r.color,percent:r.percent,amount:Math.round(surplus*r.percent/100)}))
+  // Nếu đã có record tháng này thì update, không thêm mới
+  const existing=await db.allocationHistory.where('monthKey').equals(monthKey).first()
+  const record={
+    id:existing?.id||genId(),
+    monthKey,year:y,month:m,
+    income:summary.income,expense:summary.expense,surplus,
+    allocs,savedAt:Date.now()
+  }
+  if(existing)await db.allocationHistory.update(existing.id,record)
+  else await db.allocationHistory.add(record)
+}
+
+async function suggestRules(){
+  const now=new Date()
+  const s=await sumByMonth(now.getFullYear(),now.getMonth()+1)
+  const ratio=s.income>0?s.expense/s.income:0.5
+  const suggested=ratio>0.7
+    ?[{label:'Tiết kiệm',percent:40,color:'#1D9E75'},{label:'Dự phòng',percent:40,color:'#BA7517'},{label:'Giải trí',percent:20,color:'#7F77DD'}]
+    :[{label:'Tiết kiệm',percent:30,color:'#1D9E75'},{label:'Dự phòng',percent:20,color:'#BA7517'},{label:'Đầu tư',percent:30,color:'#378ADD'},{label:'Giải trí',percent:20,color:'#7F77DD'}]
+  await db.transaction('rw',db.allocationRules,async()=>{
+    await db.allocationRules.clear()
+    await db.allocationRules.bulkAdd(suggested.map(r=>({...r,id:genId(),isDefault:false})))
+  })
+  allRules=await db.allocationRules.toArray()
+  log('info','Đã áp dụng gợi ý phân bổ');await renderSurplus()
+}
+
+async function renderAllocHistory(){
+  const tbody=document.getElementById('alloc-history-tbody')
+  const empty=document.getElementById('alloc-history-empty')
+  if(!tbody)return
+  // Sắp xếp từ cũ → mới để tính cộng dồn đúng thứ tự
+  const history=await db.allocationHistory.orderBy('savedAt').toArray()
+  if(!history.length){tbody.innerHTML='';empty.style.display='block';return}
+  empty.style.display='none'
+
+  // Gom tất cả label+màu xuất hiện trong lịch sử
+  const labelMeta=new Map() // label → color
+  history.forEach(h=>(h.allocs||[]).forEach(a=>{if(a.percent>0&&!labelMeta.has(a.label))labelMeta.set(a.label,a.color)}))
+  const allLabels=[...labelMeta.keys()]
+
+  // Tính cộng dồn từng dòng (tháng cũ → mới)
+  const cumRunning=new Map() // label → tổng cộng dồn đến dòng này
+  allLabels.forEach(l=>cumRunning.set(l,0))
+
+  const rows=history.map(h=>{
+    // Cập nhật cộng dồn
+    const monthAmounts=new Map()
+    ;(h.allocs||[]).forEach(a=>monthAmounts.set(a.label,Math.max(0,a.amount)))
+    allLabels.forEach(l=>{
+      const amt=monthAmounts.get(l)||0
+      cumRunning.set(l,(cumRunning.get(l)||0)+amt)
+    })
+    // Snapshot cộng dồn tại dòng này
+    const cumSnap=new Map([...cumRunning])
+
+    // Cột phân bổ: "tháng này / tổng cộng dồn"
+    const allocCells=allLabels.map(l=>{
+      const color=labelMeta.get(l)
+      const thisMonth=monthAmounts.get(l)||0
+      const cumTotal=cumSnap.get(l)||0
+      return`<div style="display:flex;align-items:center;gap:4px;margin-bottom:3px;font-size:12px">
+        <span style="display:inline-block;width:8px;height:8px;border-radius:50%;flex-shrink:0;background:${color}"></span>
+        <span style="color:var(--text2)">${l}</span>
+        <span style="margin-left:auto;white-space:nowrap">
+          <span style="color:var(--text3)">${fmtVND(thisMonth)}</span>
+          <span style="color:var(--text3);margin:0 3px">→</span>
+          <strong style="color:var(--green-text)">${fmtVND(cumTotal)}</strong>
+        </span>
+      </div>`
+    }).join('')
+
+    return`<tr>
+      <td style="font-weight:600;white-space:nowrap;vertical-align:top;padding-top:12px">${fmtMonth(h.year,h.month)}</td>
+      <td style="color:var(--green);white-space:nowrap;vertical-align:top;padding-top:12px">${fmtVND(h.income)}</td>
+      <td style="color:var(--red);white-space:nowrap;vertical-align:top;padding-top:12px">${fmtVND(h.expense)}</td>
+      <td style="font-weight:700;white-space:nowrap;vertical-align:top;padding-top:12px;color:${h.surplus>=0?'var(--blue)':'var(--red)'}">${fmtVND(h.surplus)}</td>
+      <td style="min-width:220px">${allocCells}</td>
+      <td style="vertical-align:top;padding-top:12px"><button class="btn btn-danger btn-sm" onclick="deleteAllocHistory('${h.id}')">✕</button></td>
+    </tr>`
+  })
+
+  // Hàng tổng — đảo ngược để hiện mới → cũ
+  rows.reverse()
+  // Tổng cuối cùng (cumRunning đã là tổng toàn bộ)
+  const totalSurplus=history.reduce((s,h)=>s+Math.max(0,h.surplus),0)
+  const totalCols=allLabels.map(l=>{
+    const color=labelMeta.get(l)
+    return`<div style="display:flex;align-items:center;gap:4px;margin-bottom:3px;font-size:12px">
+      <span style="display:inline-block;width:8px;height:8px;border-radius:50%;flex-shrink:0;background:${color}"></span>
+      <span style="font-weight:700">${l}</span>
+      <strong style="margin-left:auto;color:var(--green-text);font-size:13px">${fmtVND(cumRunning.get(l)||0)}</strong>
+    </div>`
+  }).join('')
+
+  tbody.innerHTML=rows.join('')
+  if(history.length>=1){
+    tbody.innerHTML+=`<tr style="background:var(--green-bg)">
+      <td colspan="3" style="color:var(--green-text);font-weight:700;vertical-align:top;padding-top:10px">🏦 Tổng tích luỹ (${history.length} tháng)</td>
+      <td style="color:var(--green);font-weight:800;vertical-align:top;padding-top:10px">${fmtVND(totalSurplus)}</td>
+      <td style="padding-top:6px">${totalCols}</td>
+      <td></td>
+    </tr>`
+  }
+}
+
+async function deleteAllocHistory(id){
+  await db.allocationHistory.delete(id)
+  log('info','Đã xoá bản ghi lịch sử')
+  await renderAllocHistory()
+}
+
+// ══════════════════════════════════════════
+// SETTINGS
+// ══════════════════════════════════════════
+async function renderSettings(){
+  // Categories — edit inline
+  document.getElementById('cat-table').innerHTML=allCats.map((c,i)=>`<tr>
+    <td>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+        <span id="cat-color-dot-${i}" style="display:inline-block;width:22px;height:22px;border-radius:5px;background:${c.color};border:1px solid #ccc;flex-shrink:0"></span>
+        <input type="color" id="cat-color-${i}" value="${c.color}" style="opacity:0;width:0;height:0;position:absolute"
+          onchange="updateCatColor(${i},this.value)">
+      </label>
+    </td>
+    <td><input type="text" id="cat-name-${i}" value="${c.name}" style="font-weight:500;width:120px;padding:4px 8px;font-size:13px" onchange="updateCatName(${i},this.value)"></td>
+    <td><span class="tag ${!c.txType||c.txType==='expense'?'tag-expense':'tag-income'}">${c.txType==='income'?'Thu nhập':'Chi tiêu'}</span></td>
+    <td><span class="tag ${c.isEssential?'tag-user':'tag-ai'}" style="cursor:pointer;user-select:none" title="Nhấp để đổi" onclick="toggleEssential('${c.id}',${!c.isEssential},this)">${c.isEssential?'✓ Thiết yếu':'✗ Không thiết yếu'}</span></td>
+    <td style="color:var(--text3);font-size:12px;max-width:160px">
+      <span style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${(c.keywords||[]).join(', ')}">${(c.keywords||[]).join(', ')||'—'}</span>
+    </td>
+    <td style="white-space:nowrap">
+      <button class="btn btn-ghost btn-sm" style="margin-right:3px" onclick="openEditCat('${c.id}')">✏</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteCat('${c.id}')">✕</button>
+    </td>
+  </tr>`).join('')
+
+  // Overrides
+  const ovs=await db.classifierOverrides.orderBy('count').reverse().toArray()
+  const empty=document.getElementById('override-empty')
+  if(!ovs.length){document.getElementById('override-table').innerHTML='';empty.style.display='block';return}
+  empty.style.display='none'
+  document.getElementById('override-table').innerHTML=ovs.map(o=>{
+    const cat=catById(o.categoryId)
+    return`<tr>
+      <td><code style="background:var(--bg);padding:2px 7px;border-radius:4px;font-size:12px">${o.keyword}</code></td>
+      <td><span class="dot" style="background:${cat.color}"></span>${cat.name}</td>
+      <td><span class="tag tag-${o.count>=3?'high':'low'}">${o.count} lần</span></td>
+      <td><button class="btn btn-danger btn-sm" onclick="delOverride('${o.keyword}')">Xoá</button></td>
+    </tr>`
+  }).join('')
+}
+function openAddCat(){
+  document.getElementById('modal-cat-title').textContent='Thêm danh mục'
+  document.getElementById('cat-edit-id').value=''
+  document.getElementById('cat-edit-name').value=''
+  document.getElementById('cat-edit-color').value='#378ADD'
+  document.getElementById('cat-edit-type').value='expense'
+  document.getElementById('cat-edit-essential').checked=false
+  document.getElementById('cat-edit-keywords').value=''
+  document.getElementById('modal-cat').classList.add('open')
+}
+function openEditCat(id){
+  const cat=allCats.find(c=>c.id===id);if(!cat)return
+  document.getElementById('modal-cat-title').textContent='Sửa danh mục'
+  document.getElementById('cat-edit-id').value=cat.id
+  document.getElementById('cat-edit-name').value=cat.name
+  document.getElementById('cat-edit-color').value=cat.color
+  document.getElementById('cat-edit-type').value=cat.txType||'expense'
+  document.getElementById('cat-edit-essential').checked=!!cat.isEssential
+  document.getElementById('cat-edit-keywords').value=(cat.keywords||[]).join(', ')
+  document.getElementById('modal-cat').classList.add('open')
+}
+async function saveCat(){
+  const id=document.getElementById('cat-edit-id').value
+  const name=document.getElementById('cat-edit-name').value.trim()
+  const color=document.getElementById('cat-edit-color').value
+  const txType=document.getElementById('cat-edit-type').value
+  const isEssential=document.getElementById('cat-edit-essential').checked
+  const kwRaw=document.getElementById('cat-edit-keywords').value
+  const keywords=kwRaw.split(',').map(k=>k.trim()).filter(Boolean)
+  if(!name){log('err','Tên danh mục không được trống');return}
+  if(id){
+    // edit
+    const cat=allCats.find(c=>c.id===id);if(!cat)return
+    Object.assign(cat,{name,color,txType,isEssential,keywords})
+    await db.categories.update(id,{name,color,txType,isEssential,keywords})
+    log('ok',`Đã cập nhật danh mục "${name}"`)
+  } else {
+    // add
+    const maxOrder=allCats.reduce((m,c)=>Math.max(m,c.sortOrder||0),0)
+    const newCat={id:genId(),name,color,txType,isEssential,keywords,sortOrder:maxOrder+1}
+    await db.categories.add(newCat)
+    allCats.push(newCat)
+    log('ok',`Đã thêm danh mục "${name}"`)
+  }
+  allCats=await db.categories.orderBy('sortOrder').toArray()
+  await clf.reload()
+  closeModal('modal-cat')
+  await renderSettings()
+  // Refresh category selects
+  const sel=document.getElementById('inp-cat')
+  sel.innerHTML='<option value="">-- Tự động phân loại --</option>'+
+    allCats.filter(c=>!c.txType||c.txType===txType).map(c=>`<option value="${c.id}">${c.name}</option>`).join('')
+}
+async function deleteCat(id){
+  const cat=allCats.find(c=>c.id===id);if(!cat)return
+  // Check if any tx uses this cat
+  const count=await db.transactions.where('categoryId').equals(id).count()
+  if(count>0){
+    if(!confirm(`Danh mục "${cat.name}" đang có ${count} giao dịch. Xoá sẽ không mất giao dịch nhưng chúng sẽ không có danh mục. Tiếp tục?`))return
+  }
+  await db.categories.delete(id)
+  allCats=allCats.filter(c=>c.id!==id)
+  await clf.reload()
+  log('info',`Đã xoá danh mục "${cat.name}"`)
+  await renderSettings()
+}
+async function updateCatName(i,val){
+  const cat=allCats[i];if(!cat)return
+  cat.name=val.trim()||cat.name
+  await db.categories.update(cat.id,{name:cat.name})
+  await clf.reload()
+  log('info',`Đổi tên → "${cat.name}"`)
+}
+async function updateCatColor(i,val){
+  const cat=allCats[i];if(!cat)return
+  cat.color=val
+  await db.categories.update(cat.id,{color:val})
+  // Cập nhật dot preview ngay
+  const dot=document.getElementById('cat-color-dot-'+i)
+  if(dot)dot.style.background=val
+  log('info',`Đổi màu "${cat.name}" → ${val}`)
+}
+async function toggleEssential(catId,newVal,el){
+  const cat=allCats.find(c=>c.id===catId)
+  if(!cat)return
+  cat.isEssential=newVal
+  await db.categories.update(catId,{isEssential:newVal})
+  el.className='tag '+(newVal?'tag-user':'tag-ai')
+  el.textContent=newVal?'✓ Thiết yếu':'✗ Không thiết yếu'
+  el.setAttribute('onclick',`toggleEssential('${catId}',${!newVal},this)`)
+  log('info',`"${cat.name}" → ${newVal?'Thiết yếu':'Không thiết yếu'}`)
+}
+async function delOverride(kw){
+  await clf.delOv(kw);log('info',`Xoá override: "${kw}"`);await renderSettings()
+}
+
+// ══════════════════════════════════════════
+// EXPORT / IMPORT
+// ══════════════════════════════════════════
+async function exportJSON(){
+  const[txs,cats,rules,ovs]=await Promise.all([
+    db.transactions.toArray(),db.categories.toArray(),
+    db.allocationRules.toArray(),db.classifierOverrides.toArray()
+  ])
+  const data=JSON.stringify({transactions:txs,categories:cats,allocationRules:rules,classifierOverrides:ovs},null,2)
+  const blob=new Blob([data],{type:'application/json'})
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob)
+  a.download=`sothuchi-backup-${dateStr()}.json`;a.click()
+  log('ok','Đã xuất dữ liệu JSON')
+}
+async function exportCSV(){
+  const txs=await listByMonth(curYear,curMonth)
+  const rows=[['Ngày','Loại','Số tiền','Ghi chú','Danh mục','Nhãn']]
+  txs.forEach(t=>{const c=catById(t.categoryId);rows.push([t.date,t.type,t.amount,t.note,c.name,t.autoLabeled?'AI':'User'])})
+  const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n')
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'})
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob)
+  a.download=`sothuchi-${mPrefix(curYear,curMonth)}.csv`;a.click()
+  log('ok','Đã xuất CSV')
+}
+async function importJSON(input){
+  const file=input.files[0];if(!file)return
+  const text=await file.text()
+  try{
+    const data=JSON.parse(text)
+    await db.transaction('rw',[db.transactions,db.categories,db.allocationRules,db.classifierOverrides],async()=>{
+      if(data.categories?.length){await db.categories.clear();await db.categories.bulkAdd(data.categories)}
+      if(data.transactions?.length){await db.transactions.clear();await db.transactions.bulkAdd(data.transactions)}
+      if(data.allocationRules?.length){await db.allocationRules.clear();await db.allocationRules.bulkAdd(data.allocationRules)}
+      if(data.classifierOverrides?.length){await db.classifierOverrides.clear();await db.classifierOverrides.bulkAdd(data.classifierOverrides)}
+    })
+    await clf.load()
+    allCats=await db.categories.orderBy('sortOrder').toArray()
+    allRules=await db.allocationRules.toArray()
+    log('ok','Nhập dữ liệu thành công');nav('dashboard')
+  }catch(e){log('err','Nhập thất bại: '+e.message)}
+  input.value=''
+}
+function confirmReset(){document.getElementById('modal-reset').classList.add('open')}
+function closeModal(id){document.getElementById(id).classList.remove('open')}
+async function resetAll(){
+  await db.transaction('rw',[db.transactions,db.categories,db.allocationRules,db.classifierOverrides],async()=>{
+    await Promise.all([db.transactions.clear(),db.categories.clear(),db.allocationRules.clear(),db.classifierOverrides.clear()])
+  })
+  closeModal('modal-reset');await seed();await clf.load()
+  allCats=await db.categories.orderBy('sortOrder').toArray()
+  allRules=await db.allocationRules.toArray()
+  log('info','Đã reset toàn bộ dữ liệu');nav('dashboard')
+}
+
+// ══════════════════════════════════════════
+// BOOTSTRAP
+// ══════════════════════════════════════════
+async function bootstrap(){
+  try{
+    log('info','Khởi động...')
+    await seed()
+    await clf.load()
+    allCats=await db.categories.orderBy('sortOrder').toArray()
+    allRules=await db.allocationRules.toArray()
+
+    // Populate category select (mặc định expense, fallback nếu không có txType)
+    const sel=document.getElementById('inp-cat')
+    allCats.filter(c=>!c.txType||c.txType==='expense').forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.name;sel.appendChild(o)})
+
+    // Init date
+    document.getElementById('inp-date').value=dateStr()
+
+    // Init month labels
+    const lbl=`${MONTHS_VI[curMonth-1]} ${curYear}`
+    document.querySelectorAll('#month-nav-label,#ledger-month-label,#dash-month-label').forEach(el=>el&&(el.textContent=lbl))
+
+    await renderDashboard()
+    log('ok',`Sẵn sàng — ${allCats.length} danh mục, ${clf.ovs.size} overrides`)
+  }catch(e){log('err','Lỗi khởi động: '+e.message);console.error(e)}
+}
+
+bootstrap()
+</script>
+
+
+</body></html>
